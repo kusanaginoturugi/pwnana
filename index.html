@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pwnana</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #21262d;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  h1 {
+    font-size: 1.2rem;
+    color: #f0f6fc;
+    letter-spacing: 0.05em;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  label { font-size: 0.85rem; color: #8b949e; display: flex; align-items: center; gap: 0.4rem; }
+
+  input[type=number] {
+    background: #161b22;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    width: 4.5rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+  }
+
+  input[type=checkbox] { accent-color: #58a6ff; width: 1em; height: 1em; }
+
+  button {
+    background: #238636;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.35rem 1rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button:hover { background: #2ea043; }
+
+  #toast {
+    position: fixed;
+    bottom: 1.2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #58a6ff;
+    color: #0d1117;
+    padding: 0.4rem 1rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  #toast.show { opacity: 1; }
+
+  #grid {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14ch, 1fr));
+    gap: 0.4rem 1rem;
+    align-content: start;
+  }
+
+  .pw {
+    font-size: clamp(0.75rem, 1.5vw, 1rem);
+    color: #7ee787;
+    cursor: pointer;
+    padding: 0.15rem 0.3rem;
+    border-radius: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.1s, color 0.1s;
+    user-select: none;
+  }
+  .pw:hover { background: #161b22; color: #f0f6fc; }
+  .pw.copied { background: #58a6ff22; color: #58a6ff; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>pwnana</h1>
+  <div class="controls">
+    <label>length <input type="number" id="len" value="16" min="8" max="64"></label>
+    <label>count  <input type="number" id="cnt" value="50" min="1" max="200"></label>
+    <label><input type="checkbox" id="digit">  digit</label>
+    <label><input type="checkbox" id="symbol"> symbol</label>
+    <button id="gen">Generate</button>
+  </div>
+</header>
+
+<div id="grid"></div>
+<div id="toast">Copied!</div>
+
+<script>
+const LAYOUT = {
+  lc: [...'wrtsfgzxcvbq'],
+  lv: [...'ea'],
+  rc: [...'yphjklnm'],
+  rv: [...'uio'],
+};
+const DIGRAPHS = ['oo','ee','ii','th','sh','wh','ou','ai','au','ng'];
+const LEET = { i:'!', a:'@', s:'$', e:'3', o:'0', t:'7', q:'9', b:'6', g:'8' };
+
+const pick = a => a[Math.random() * a.length | 0];
+
+function unit(hand) {
+  const { lc, lv, rc, rv } = LAYOUT;
+  if (hand === 'left')
+    return Math.random() < 0.5 ? [pick(rv) + pick(lc), 'left'] : [pick(rc) + pick(lv), 'left'];
+  else
+    return Math.random() < 0.5 ? [pick(lv) + pick(rc), 'right'] : [pick(lc) + pick(rv), 'right'];
+}
+
+function applyLeet(arr, wantDigit) {
+  const pred = wantDigit ? c => /\d/.test(c) : c => !/\d/.test(c);
+  const cands = arr.reduce((a, c, i) => (LEET[c] && pred(LEET[c]) ? [...a, i] : a), []);
+  if (!cands.length) return false;
+  const i = pick(cands);
+  arr[i] = LEET[arr[i]];
+  return true;
+}
+
+function generate(length, digit, symbol) {
+  const chunks = [];
+  let hand = Math.random() < 0.5 ? 'left' : 'right';
+  while (chunks.reduce((s, c) => s + c.length, 0) < length) {
+    if (Math.random() < 0.2) {
+      chunks.push(pick(DIGRAPHS));
+    } else {
+      const [u, h] = unit(hand);
+      chunks.push(u);
+      hand = h;
+    }
+  }
+  const res = [...chunks.join('').slice(0, length)];
+  if (digit && !applyLeet(res, true)) {
+    res[1 + (Math.random() * (length - 2) | 0)] = String(Math.random() * 10 | 0);
+  }
+  if (symbol && !applyLeet(res, false)) {
+    const syms = Object.values(LEET).filter(v => !/\d/.test(v));
+    res[1 + (Math.random() * (length - 2) | 0)] = pick(syms);
+  }
+  return res.join('');
+}
+
+let toastTimer;
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1200);
+}
+
+function render() {
+  const length = Math.max(8, parseInt(document.getElementById('len').value) || 16);
+  const count  = Math.min(200, Math.max(1, parseInt(document.getElementById('cnt').value) || 50));
+  const digit  = document.getElementById('digit').checked;
+  const symbol = document.getElementById('symbol').checked;
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const pw = generate(length, digit, symbol);
+    const el = document.createElement('div');
+    el.className = 'pw';
+    el.textContent = pw;
+    el.title = 'click to copy';
+    el.addEventListener('click', () => {
+      navigator.clipboard.writeText(pw).then(() => {
+        el.classList.add('copied');
+        setTimeout(() => el.classList.remove('copied'), 800);
+        showToast();
+      });
+    });
+    grid.appendChild(el);
+  }
+}
+
+document.getElementById('gen').addEventListener('click', render);
+render();
+</script>
+</body>
+</html>
