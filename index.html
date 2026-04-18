@@ -16,6 +16,8 @@
     flex-direction: column;
   }
 
+  html, body { height: 100%; overflow: hidden; }
+
   header {
     padding: 1rem 1.5rem;
     border-bottom: 1px solid #21262d;
@@ -113,7 +115,6 @@
   <h1>pwnana</h1>
   <div class="controls">
     <label>length <input type="number" id="len" value="16" min="8" max="64"></label>
-    <label>count  <input type="number" id="cnt" value="50" min="1" max="200"></label>
     <label><input type="checkbox" id="digit">  digit</label>
     <label><input type="checkbox" id="symbol"> symbol</label>
     <button id="gen">Generate</button>
@@ -183,30 +184,61 @@ function showToast() {
   toastTimer = setTimeout(() => t.classList.remove('show'), 1200);
 }
 
+function countThatFits(length) {
+  const grid = document.getElementById('grid');
+  const probe = document.createElement('div');
+  probe.className = 'pw';
+  probe.style.visibility = 'hidden';
+  probe.textContent = 'x'.repeat(length);
+  grid.appendChild(probe);
+
+  const itemRect = probe.getBoundingClientRect();
+  const gridRect = grid.getBoundingClientRect();
+  const style    = getComputedStyle(grid);
+  const colGap   = parseFloat(style.columnGap) || 0;
+  const rowGap   = parseFloat(style.rowGap)    || 0;
+  const cols     = style.gridTemplateColumns.split(' ').length;
+  const rows     = Math.floor((gridRect.height + rowGap) / (itemRect.height + rowGap));
+
+  probe.remove();
+  return Math.max(1, cols * rows);
+}
+
+function makeItem(pw) {
+  const el = document.createElement('div');
+  el.className = 'pw';
+  el.textContent = pw;
+  el.title = 'click to copy';
+  el.addEventListener('click', () => {
+    navigator.clipboard.writeText(pw).then(() => {
+      el.classList.add('copied');
+      setTimeout(() => el.classList.remove('copied'), 800);
+      showToast();
+    });
+  });
+  return el;
+}
+
 function render() {
   const length = Math.max(8, parseInt(document.getElementById('len').value) || 16);
-  const count  = Math.min(200, Math.max(1, parseInt(document.getElementById('cnt').value) || 50));
   const digit  = document.getElementById('digit').checked;
   const symbol = document.getElementById('symbol').checked;
 
-  const grid = document.getElementById('grid');
+  const grid  = document.getElementById('grid');
   grid.innerHTML = '';
-  for (let i = 0; i < count; i++) {
-    const pw = generate(length, digit, symbol);
-    const el = document.createElement('div');
-    el.className = 'pw';
-    el.textContent = pw;
-    el.title = 'click to copy';
-    el.addEventListener('click', () => {
-      navigator.clipboard.writeText(pw).then(() => {
-        el.classList.add('copied');
-        setTimeout(() => el.classList.remove('copied'), 800);
-        showToast();
-      });
-    });
-    grid.appendChild(el);
-  }
+
+  const count = countThatFits(length);
+  const frag  = document.createDocumentFragment();
+  for (let i = 0; i < count; i++)
+    frag.appendChild(makeItem(generate(length, digit, symbol)));
+  grid.appendChild(frag);
 }
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(render, 150);
+});
 
 document.getElementById('gen').addEventListener('click', render);
 render();
