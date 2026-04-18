@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+"""Pronounceable, keyboard-alternating password generator."""
+import random
+import argparse
+
+# QWERTY layout — 変えたければここを編集
+LAYOUT = {
+    'left_consonants':  list('wrtsfgzxcvbq'),
+    'left_vowels':      list('ea'),
+    'right_consonants': list('yphjklnm'),
+    'right_vowels':     list('uio'),
+}
+
+# 同一手でも発音上自然なダイグラフ
+DIGRAPHS = ['oo', 'ee', 'ii', 'th', 'sh', 'wh', 'ou', 'ai', 'au', 'ng']
+
+# Leet 置換マップ — カスタマイズ可能
+# 値が数字 → -d で使用、記号 → -s で使用
+LEET = {
+    'i': '!',
+    'a': '@',
+    's': '$',
+    'e': '3',
+    'o': '0',
+    't': '7',
+    'q': '9',
+    'b': '6',
+    'g': '8',
+}
+
+DEFAULT_LENGTH = 16
+
+
+def _leet(result, want_digit):
+    """LEET マップを使って1文字置換する。該当なしなら False を返す。"""
+    pred = str.isdigit if want_digit else lambda c: not c.isdigit()
+    candidates = [i for i, c in enumerate(result)
+                  if c in LEET and pred(LEET[c])]
+    if not candidates:
+        return False
+    idx = random.choice(candidates)
+    result[idx] = LEET[result[idx]]
+    return True
+
+
+def _unit(from_hand):
+    """2文字の発音可能チャンクを生成し、(chars, next_hand) を返す。"""
+    lc = LAYOUT['left_consonants']
+    lv = LAYOUT['left_vowels']
+    rc = LAYOUT['right_consonants']
+    rv = LAYOUT['right_vowels']
+
+    if from_hand == 'left':
+        if random.getrandbits(1):
+            return random.choice(rv) + random.choice(lc), 'left'
+        else:
+            return random.choice(rc) + random.choice(lv), 'left'
+    else:
+        if random.getrandbits(1):
+            return random.choice(lv) + random.choice(rc), 'right'
+        else:
+            return random.choice(lc) + random.choice(rv), 'right'
+
+
+def generate(length, digit=False, symbol=False):
+    chunks = []
+    hand = random.choice(['left', 'right'])
+
+    while sum(len(c) for c in chunks) < length:
+        if random.random() < 0.2:
+            chunks.append(random.choice(DIGRAPHS))
+        else:
+            unit, hand = _unit(hand)
+            chunks.append(unit)
+
+    result = list(''.join(chunks)[:length])
+
+    if digit and not _leet(result, want_digit=True):
+        pos = random.randint(1, length - 2)
+        result[pos] = str(random.randint(0, 9))
+
+    if symbol and not _leet(result, want_digit=False):
+        symbols = [v for v in LEET.values() if not v.isdigit()]
+        pos = random.randint(1, length - 2)
+        result[pos] = random.choice(symbols)
+
+    return ''.join(result)
+
+
+def main():
+    p = argparse.ArgumentParser(
+        prog='pwnana',
+        description='Pronounceable, keyboard-alternating password generator',
+    )
+    p.add_argument('length', nargs='?', type=int, default=DEFAULT_LENGTH,
+                   help=f'Password length (min 12, default {DEFAULT_LENGTH})')
+    p.add_argument('count',  nargs='?', type=int, default=1,
+                   help='Number of passwords to generate')
+    p.add_argument('-d', '--digit',  action='store_true', help='Include one digit')
+    p.add_argument('-s', '--symbol', action='store_true', help='Include one symbol')
+    args = p.parse_args()
+
+    length = max(12, args.length)
+    for _ in range(args.count):
+        print(generate(length, args.digit, args.symbol))
+
+
+if __name__ == '__main__':
+    main()
