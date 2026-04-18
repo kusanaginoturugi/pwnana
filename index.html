@@ -108,6 +108,12 @@
   }
   .pw:hover { background: #161b22; color: #f0f6fc; }
   .pw.copied { background: #58a6ff22; color: #58a6ff; }
+  .pw-hint {
+    font-size: 0.7em;
+    font-weight: normal;
+    color: #8b949e;
+    margin-top: 0.1em;
+  }
 </style>
 </head>
 <body>
@@ -116,8 +122,9 @@
   <h1>pwnana</h1>
   <div class="controls">
     <label>length <input type="number" id="len" value="16" min="8" max="64"></label>
-    <label><input type="checkbox" id="digit">  digit</label>
-    <label><input type="checkbox" id="symbol"> symbol</label>
+    <label><input type="checkbox" id="digit">     digit</label>
+    <label><input type="checkbox" id="symbol">    symbol</label>
+    <label><input type="checkbox" id="goroawase"> 語呂</label>
     <button id="gen">Generate</button>
   </div>
 </header>
@@ -134,6 +141,26 @@ const LAYOUT = {
 };
 const DIGRAPHS = ['oo','ee','ii','th','sh','wh','ou','ai','au','ng'];
 const LEET = { i:'!', a:'@', s:'$', e:'3', o:'0', t:'7', q:'9', b:'6', g:'8' };
+const GOROAWASE = [
+  ["よろしく",   "4649"],
+  ["いい肉",     "1129"],
+  ["四苦八苦",   "4989"],
+  ["いい国",     "1192"],
+  ["鳴くよ",     "794"],
+  ["いくよ",     "194"],
+  ["ごみ",       "53"],
+  ["むし",       "64"],
+  ["ふく",       "29"],
+  ["ごろごろ",   "5656"],
+  ["むくむく",   "6969"],
+  ["ご苦労",     "596"],
+  ["ごろ",       "56"],
+  ["ふくし",     "294"],
+  ["みなし",     "374"],
+  ["はちく",     "89"],
+  ["よいしょ",   "414"],
+  ["しくじり",   "494"],
+];
 
 const pick = a => a[Math.random() * a.length | 0];
 
@@ -154,7 +181,7 @@ function applyLeet(arr, wantDigit) {
   return true;
 }
 
-function generate(length, digit, symbol) {
+function generate(length, digit, symbol, goroawase) {
   const chunks = [];
   let hand = Math.random() < 0.5 ? 'left' : 'right';
   while (chunks.reduce((s, c) => s + c.length, 0) < length) {
@@ -167,14 +194,23 @@ function generate(length, digit, symbol) {
     }
   }
   const res = [...chunks.join('').slice(0, length)];
-  if (digit && !applyLeet(res, true)) {
+  let hint = null;
+
+  if (goroawase) {
+    const [label, digits] = pick(GOROAWASE);
+    const pos = 1 + (Math.random() * Math.max(1, length - digits.length - 1) | 0);
+    for (let i = 0; i < digits.length && pos + i < length; i++)
+      res[pos + i] = digits[i];
+    hint = label;
+  } else if (digit && !applyLeet(res, true)) {
     res[1 + (Math.random() * (length - 2) | 0)] = String(Math.random() * 10 | 0);
   }
+
   if (symbol && !applyLeet(res, false)) {
     const syms = Object.values(LEET).filter(v => !/\d/.test(v));
     res[1 + (Math.random() * (length - 2) | 0)] = pick(syms);
   }
-  return res.join('');
+  return [res.join(''), hint];
 }
 
 let toastTimer;
@@ -185,12 +221,12 @@ function showToast() {
   toastTimer = setTimeout(() => t.classList.remove('show'), 1200);
 }
 
-function countThatFits(length) {
+function countThatFits(length, goroawase) {
   const grid = document.getElementById('grid');
   const probe = document.createElement('div');
   probe.className = 'pw';
   probe.style.visibility = 'hidden';
-  probe.textContent = 'x'.repeat(length);
+  probe.innerHTML = 'x'.repeat(length) + (goroawase ? '<div class="pw-hint">語呂</div>' : '');
   grid.appendChild(probe);
 
   const itemRect = probe.getBoundingClientRect();
@@ -205,11 +241,19 @@ function countThatFits(length) {
   return Math.max(1, cols * rows);
 }
 
-function makeItem(pw) {
+function makeItem(pw, hint) {
   const el = document.createElement('div');
   el.className = 'pw';
-  el.textContent = pw;
   el.title = 'click to copy';
+  const text = document.createElement('div');
+  text.textContent = pw;
+  el.appendChild(text);
+  if (hint) {
+    const h = document.createElement('div');
+    h.className = 'pw-hint';
+    h.textContent = hint;
+    el.appendChild(h);
+  }
   el.addEventListener('click', () => {
     navigator.clipboard.writeText(pw).then(() => {
       el.classList.add('copied');
@@ -221,17 +265,20 @@ function makeItem(pw) {
 }
 
 function render() {
-  const length = Math.max(8, parseInt(document.getElementById('len').value) || 16);
-  const digit  = document.getElementById('digit').checked;
-  const symbol = document.getElementById('symbol').checked;
+  const length    = Math.max(8, parseInt(document.getElementById('len').value) || 16);
+  const digit     = document.getElementById('digit').checked;
+  const symbol    = document.getElementById('symbol').checked;
+  const goroawase = document.getElementById('goroawase').checked;
 
-  const grid  = document.getElementById('grid');
+  const grid = document.getElementById('grid');
   grid.innerHTML = '';
 
-  const count = countThatFits(length);
+  const count = countThatFits(length, goroawase);
   const frag  = document.createDocumentFragment();
-  for (let i = 0; i < count; i++)
-    frag.appendChild(makeItem(generate(length, digit, symbol)));
+  for (let i = 0; i < count; i++) {
+    const [pw, hint] = generate(length, digit, symbol, goroawase);
+    frag.appendChild(makeItem(pw, hint));
+  }
   grid.appendChild(frag);
 }
 

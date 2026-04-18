@@ -28,6 +28,30 @@ LEET = {
     'g': '8',
 }
 
+# 語呂合わせ辞書: (読み/説明, 数字列)
+GOROAWASE = [
+    ("よろしく",     "4649"),
+    ("いい肉",       "1129"),
+    ("四苦八苦",     "4989"),
+    ("いい国",       "1192"),   # いい国作ろう鎌倉幕府
+    ("鳴くよ",       "794"),    # 鳴くよウグイス平安京
+    ("いくよ",       "194"),
+    ("ごみ",         "53"),
+    ("むし",         "64"),
+    ("ふく",         "29"),
+    ("ごろごろ",     "5656"),
+    ("むくむく",     "6969"),
+    ("ご苦労",       "596"),
+    ("ごろ",         "56"),
+    ("ふくし",       "294"),
+    ("みなし",       "374"),
+    ("はちく",       "89"),
+    ("なにもない",   "7201"),   # な=7, に=2, も=0, な=7... ない=71 → 7201
+    ("いちご",       "15"),     # い=1, ち→5(ご)? → いちご=1560? let's use い=1, ご=5
+    ("よいしょ",     "414"),    # よ=4, い=1, し=4
+    ("しくじり",     "494"),    # し=4, く=9, じ→4? → 494
+]
+
 DEFAULT_LENGTH = 16
 
 
@@ -62,7 +86,8 @@ def _unit(from_hand):
             return random.choice(lc) + random.choice(rv), 'right'
 
 
-def generate(length, digit=False, symbol=False):
+def generate(length, digit=False, symbol=False, goroawase=False):
+    """(password, hint) を返す。hint は語呂合わせ時のみ文字列、それ以外は None。"""
     chunks = []
     hand = random.choice(['left', 'right'])
 
@@ -74,8 +99,16 @@ def generate(length, digit=False, symbol=False):
             chunks.append(unit)
 
     result = list(''.join(chunks)[:length])
+    hint = None
 
-    if digit and not _leet(result, want_digit=True):
+    if goroawase:
+        label, digits = random.choice(GOROAWASE)
+        pos = random.randint(1, max(1, length - len(digits) - 1))
+        for i, d in enumerate(digits):
+            if pos + i < length:
+                result[pos + i] = d
+        hint = label
+    elif digit and not _leet(result, want_digit=True):
         pos = random.randint(1, length - 2)
         result[pos] = str(random.randint(0, 9))
 
@@ -84,7 +117,7 @@ def generate(length, digit=False, symbol=False):
         pos = random.randint(1, length - 2)
         result[pos] = random.choice(symbols)
 
-    return ''.join(result)
+    return ''.join(result), hint
 
 
 def main():
@@ -96,13 +129,18 @@ def main():
                    help=f'Password length (min 12, default {DEFAULT_LENGTH})')
     p.add_argument('count',  nargs='?', type=int, default=1,
                    help='Number of passwords to generate')
-    p.add_argument('-d', '--digit',  action='store_true', help='Include one digit')
-    p.add_argument('-s', '--symbol', action='store_true', help='Include one symbol')
+    p.add_argument('-d', '--digit',     action='store_true', help='Include one digit')
+    p.add_argument('-s', '--symbol',    action='store_true', help='Include one symbol')
+    p.add_argument('-g', '--goroawase', action='store_true', help='Embed goroawase digits with hint')
     args = p.parse_args()
 
     length = max(12, args.length)
     for _ in range(args.count):
-        print(generate(length, args.digit, args.symbol))
+        pw, hint = generate(length, args.digit, args.symbol, args.goroawase)
+        if hint:
+            print(f"{pw}  [{hint}]")
+        else:
+            print(pw)
 
 
 if __name__ == '__main__':
