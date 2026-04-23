@@ -141,40 +141,7 @@ const LAYOUT = {
 };
 const DIGRAPHS = ['oo','ee','ii','th','sh','wh','ou','ai','au','ng'];
 const LEET = { i:'!', a:'@', s:'$', e:'3', o:'0', t:'7', q:'9', b:'6', g:'8' };
-const GOROAWASE = [
-  ["よろしく",     "4649"],
-  ["さんきゅ",     "39"],
-  ["おはよう",     "0840"],
-  ["いよいよ",     "1414"],
-  ["いいふうふ",   "1122"],
-  ["ごくろうさん", "5963"],
-  ["ご苦労",       "596"],
-  ["よいしょ",     "414"],
-  ["いい肉",       "1129"],
-  ["にくにく",     "2929"],
-  ["はくさい",     "8931"],
-  ["いちご",       "15"],
-  ["むしば",       "648"],
-  ["みにくい",     "3291"],
-  ["よいふろ",     "4126"],
-  ["はやい",       "881"],
-  ["はなし",       "874"],
-  ["いい国",       "1192"],
-  ["鳴くよ",       "794"],
-  ["俳句",         "819"],
-  ["七五三",       "753"],
-  ["四苦八苦",     "4989"],
-  ["よなよな",     "4747"],
-  ["しくじり",     "494"],
-  ["ごろごろ",     "5656"],
-  ["むくむく",     "6969"],
-  ["むし",         "64"],
-  ["ふく",         "29"],
-  ["ごみ",         "53"],
-  ["ごろ",         "56"],
-  ["ふくし",       "294"],
-  ["みなし",       "374"],
-];
+let GOROAWASE = [];
 
 const pick = a => a[Math.random() * a.length | 0];
 
@@ -210,7 +177,7 @@ function generate(length, digit, symbol, goroawase) {
   const res = [...chunks.join('').slice(0, length)];
   let hint = null;
 
-  if (goroawase) {
+  if (goroawase && GOROAWASE.length > 0) {
     const [label, digits] = pick(GOROAWASE);
     const pos = 1 + (Math.random() * Math.max(1, length - digits.length - 1) | 0);
     for (let i = 0; i < digits.length && pos + i < length; i++)
@@ -296,6 +263,12 @@ function render() {
   grid.appendChild(frag);
 }
 
+async function loadGoroawase() {
+  const res = await fetch('./goroawase.json', { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`Failed to load goroawase.json: ${res.status}`);
+  GOROAWASE = await res.json();
+}
+
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
@@ -303,7 +276,14 @@ window.addEventListener('resize', () => {
 });
 
 document.getElementById('gen').addEventListener('click', render);
-render();
+loadGoroawase()
+  .then(render)
+  .catch((err) => {
+    console.error(err);
+    document.getElementById('goroawase').checked = false;
+    document.getElementById('goroawase').disabled = true;
+    render();
+  });
 </script>
 </body>
 </html>
