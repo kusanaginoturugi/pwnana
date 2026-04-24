@@ -23,6 +23,7 @@ pwnana [length] [count] [-d|--digit] [-s|--symbol] [-h|--help]
      例) 左子音+右母音 (`tu`, `ro`)、右子音+左母音 (`na`, `he`)
    - 20%: ダイグラフ (`oo`, `th`, `sh`, `ai` など)
 3. 指定長になるまで連結し、超過分を切り捨て
+4. 可読性ルールとして、大文字 `O` / `I` はデフォルトで使用しない
 
 ## Digit / symbol insertion
 
