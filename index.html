@@ -162,6 +162,12 @@ function applyLeet(arr, wantDigit) {
   return true;
 }
 
+function applyDefaultRules(arr) {
+  for (let i = 0; i < arr.length; i++) {
+    if (BANNED_UPPERCASE.has(arr[i])) arr[i] = arr[i].toLowerCase();
+  }
+}
+
 function generate(length, digit, symbol, goroawase) {
   const chunks = [];
   let hand = Math.random() < 0.5 ? 'left' : 'right';
@@ -191,6 +197,7 @@ function generate(length, digit, symbol, goroawase) {
     const syms = Object.values(LEET).filter(v => !/\d/.test(v));
     res[1 + (Math.random() * (length - 2) | 0)] = pick(syms);
   }
+  applyDefaultRules(res);
   return [res.join(''), hint];
 }
 

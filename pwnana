@@ -42,6 +42,7 @@ def _load_goroawase(path):
 GOROAWASE = _load_goroawase(GOROAWASE_PATH)
 
 DEFAULT_LENGTH = 16
+BANNED_UPPERCASE = {'O', 'I'}
 
 
 def _leet(result, want_digit):
@@ -54,6 +55,13 @@ def _leet(result, want_digit):
     idx = random.choice(candidates)
     result[idx] = LEET[result[idx]]
     return True
+
+
+def _apply_default_rules(result):
+    """デフォルト可読性ルールを適用する。"""
+    for i, c in enumerate(result):
+        if c in BANNED_UPPERCASE:
+            result[i] = c.lower()
 
 
 def _unit(from_hand):
@@ -106,6 +114,7 @@ def generate(length, digit=False, symbol=False, goroawase=False):
         pos = random.randint(1, length - 2)
         result[pos] = random.choice(symbols)
 
+    _apply_default_rules(result)
     return ''.join(result), hint
 
 
