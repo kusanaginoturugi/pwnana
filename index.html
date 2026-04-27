@@ -139,8 +139,9 @@ const LAYOUT = {
   rc: [...'yphjklnm'],
   rv: [...'uio'],
 };
-const DIGRAPHS = ['oo','ee','ii','th','sh','wh','ou','ai','au','ng'];
+const DIGRAPHS = ['oo','ee','ii','ou','ai','au'];
 const LEET = { i:'!', a:'@', s:'$', e:'3', o:'0', t:'7', q:'9', b:'6', g:'8' };
+const BANNED_UPPERCASE = new Set(['O', 'I']);
 let GOROAWASE = [];
 
 const pick = a => a[Math.random() * a.length | 0];
@@ -168,6 +169,24 @@ function applyDefaultRules(arr) {
   }
 }
 
+function isConsonant(ch) {
+  return /[a-z]/i.test(ch) && !/[aeiou]/i.test(ch);
+}
+
+function fixedPositions(length) {
+  const arr = [];
+  for (let i = 3; i < length - 1; i += 4) {
+    if (i >= 1 && i <= length - 2) arr.push(i);
+  }
+  return arr.length ? arr : [Math.max(1, Math.floor(length / 2))];
+}
+
+function fixedGoroStartPositions(length) {
+  const arr = [];
+  for (let i = 0; i < length - 3; i += 4) arr.push(i);
+  return arr.length ? arr : [0];
+}
+
 function generate(length, digit, symbol, goroawase) {
   const chunks = [];
   let hand = Math.random() < 0.5 ? 'left' : 'right';
@@ -182,20 +201,32 @@ function generate(length, digit, symbol, goroawase) {
   }
   const res = [...chunks.join('').slice(0, length)];
   let hint = null;
+  const usedPositions = new Set();
+  const insertionPositions = fixedPositions(length);
 
   if (goroawase && GOROAWASE.length > 0) {
     const [label, digits] = pick(GOROAWASE);
-    const pos = 1 + (Math.random() * Math.max(1, length - digits.length - 1) | 0);
-    for (let i = 0; i < digits.length && pos + i < length; i++)
+    const pos = pick(fixedGoroStartPositions(length));
+    for (let i = 0; i < digits.length && pos + i < length; i++) {
       res[pos + i] = digits[i];
+      usedPositions.add(pos + i);
+    }
     hint = label;
   } else if (digit && !applyLeet(res, true)) {
-    res[1 + (Math.random() * (length - 2) | 0)] = String(Math.random() * 10 | 0);
+    const cands = insertionPositions.filter(i => !usedPositions.has(i));
+    const pos = pick(cands.length ? cands : insertionPositions);
+    res[pos] = String(Math.random() * 10 | 0);
+    usedPositions.add(pos);
   }
 
   if (symbol && !applyLeet(res, false)) {
     const syms = Object.values(LEET).filter(v => !/\d/.test(v));
-    res[1 + (Math.random() * (length - 2) | 0)] = pick(syms);
+    const cands = insertionPositions.filter(i => !usedPositions.has(i));
+    const pos = pick(cands.length ? cands : insertionPositions);
+    res[pos] = pick(syms);
+  }
+  if (isConsonant(res[res.length - 1]) && res[res.length - 1].toLowerCase() !== 'n') {
+    res[res.length - 1] = pick([...LAYOUT.lv, ...LAYOUT.rv]);
   }
   applyDefaultRules(res);
   return [res.join(''), hint];
@@ -226,7 +257,8 @@ function countThatFits(length, goroawase) {
   const rows     = Math.floor((gridRect.height + rowGap) / (itemRect.height + rowGap));
 
   probe.remove();
-  return Math.max(1, cols * rows);
+  const raw = Math.max(2, cols * rows);
+  return raw % 2 === 0 ? raw : raw + 1;
 }
 
 function makeItem(pw, hint) {
@@ -273,7 +305,8 @@ function render() {
 async function loadGoroawase() {
   const res = await fetch('./goroawase.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Failed to load goroawase.json: ${res.status}`);
-  GOROAWASE = await res.json();
+  const all = await res.json();
+  GOROAWASE = all.filter(([, digits]) => digits.length === 4);
 }
 
 let resizeTimer;

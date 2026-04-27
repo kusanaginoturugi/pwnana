@@ -13,8 +13,8 @@ LAYOUT = {
     'right_vowels':     list('uio'),
 }
 
-# 同一手でも発音上自然なダイグラフ
-DIGRAPHS = ['oo', 'ee', 'ii', 'th', 'sh', 'wh', 'ou', 'ai', 'au', 'ng']
+# 日本語話者が読みやすい母音中心ダイグラフ
+DIGRAPHS = ['oo', 'ee', 'ii', 'ou', 'ai', 'au']
 
 # Leet 置換マップ — カスタマイズ可能
 # 値が数字 → -d で使用、記号 → -s で使用
@@ -40,6 +40,7 @@ def _load_goroawase(path):
 
 
 GOROAWASE = _load_goroawase(GOROAWASE_PATH)
+GOROAWASE_4 = [(label, digits) for label, digits in GOROAWASE if len(digits) == 4]
 
 DEFAULT_LENGTH = 16
 BANNED_UPPERCASE = {'O', 'I'}
@@ -62,6 +63,20 @@ def _apply_default_rules(result):
     for i, c in enumerate(result):
         if c in BANNED_UPPERCASE:
             result[i] = c.lower()
+
+
+def _is_consonant(c):
+    return c.isalpha() and c.lower() not in {'a', 'e', 'i', 'o', 'u'}
+
+
+def _fixed_positions(length):
+    positions = [i for i in range(3, length - 1, 4) if 1 <= i <= length - 2]
+    return positions or [max(1, length // 2)]
+
+
+def _fixed_goro_start_positions(length):
+    positions = [i for i in range(0, length - 3, 4)]
+    return positions or [0]
 
 
 def _unit(from_hand):
@@ -98,21 +113,32 @@ def generate(length, digit=False, symbol=False, goroawase=False):
     result = list(''.join(chunks)[:length])
     hint = None
 
-    if goroawase:
-        label, digits = random.choice(GOROAWASE)
-        pos = random.randint(1, max(1, length - len(digits) - 1))
+    used_positions = set()
+    fixed_positions = _fixed_positions(length)
+
+    if goroawase and GOROAWASE_4:
+        label, digits = random.choice(GOROAWASE_4)
+        pos = random.choice(_fixed_goro_start_positions(length))
         for i, d in enumerate(digits):
             if pos + i < length:
                 result[pos + i] = d
+                used_positions.add(pos + i)
         hint = label
     elif digit and not _leet(result, want_digit=True):
-        pos = random.randint(1, length - 2)
+        candidates = [p for p in fixed_positions if p not in used_positions]
+        pos = random.choice(candidates or fixed_positions)
         result[pos] = str(random.randint(0, 9))
+        used_positions.add(pos)
 
     if symbol and not _leet(result, want_digit=False):
         symbols = [v for v in LEET.values() if not v.isdigit()]
-        pos = random.randint(1, length - 2)
+        candidates = [p for p in fixed_positions if p not in used_positions]
+        pos = random.choice(candidates or fixed_positions)
         result[pos] = random.choice(symbols)
+
+    if _is_consonant(result[-1]) and result[-1].lower() != 'n':
+        vowels = LAYOUT['left_vowels'] + LAYOUT['right_vowels']
+        result[-1] = random.choice(vowels)
 
     _apply_default_rules(result)
     return ''.join(result), hint
@@ -133,7 +159,11 @@ def main():
     args = p.parse_args()
 
     length = max(12, args.length)
-    for _ in range(args.count):
+    count = max(2, args.count)
+    if count % 2 != 0:
+        count += 1
+
+    for _ in range(count):
         pw, hint = generate(length, args.digit, args.symbol, args.goroawase)
         if hint:
             print(f"{pw}  [{hint}]")
