@@ -141,6 +141,7 @@ const LAYOUT = {
 };
 const DIGRAPHS = ['oo','ee','ii','th','sh','wh','ou','ai','au','ng'];
 const LEET = { i:'!', a:'@', s:'$', e:'3', o:'0', t:'7', q:'9', b:'6', g:'8' };
+const BANNED_UPPERCASE = new Set(['O', 'I']);
 let GOROAWASE = [];
 
 const pick = a => a[Math.random() * a.length | 0];
