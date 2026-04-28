@@ -2,7 +2,7 @@
 
 Pronounceable, keyboard-alternating password generator.
 
-pwgen ライクだけど、**長くて打ちやすい**パスワードを生成する。
+pwgen ライクだけど、**長くても打ちやすい**パスワードを生成する。
 
 ## Features
 
