@@ -3,17 +3,18 @@
 ## Synopsis
 
 ```
-pwnana [length] [count] [-d|--digit] [-s|--symbol] [-h|--help]
+pwnana [length] [count] [-d|--digit] [-s|--symbol] [-g|--goroawase] [-h|--help]
 ```
 
 ## Arguments
 
 | 引数 | デフォルト | 説明 |
 |---|---|---|
-| `length` | 16 | パスワードの文字数。最小 12 |
-| `count` | 1 | 生成する個数（出力時に偶数へ丸め） |
+| `length` | 16 | パスワードの文字数。最小 8 |
+| `count` | 端末高さの約半分 | 生成する個数。省略時は端末の行数から自動計算（出力時に偶数へ丸め） |
 | `-d`, `--digit` | off | 数字を1つ含める |
 | `-s`, `--symbol` | off | 記号を1つ含める |
+| `-g`, `--goroawase` | off | 4桁の語呂合わせを埋め込み、ヒントを表示する |
 
 ## Generation algorithm
 

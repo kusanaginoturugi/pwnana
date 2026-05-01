@@ -7,10 +7,28 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  :root {
+    --screen-bg: #020503;
+    --screen-panel: #050906;
+    --phosphor: #7dff95;
+    --phosphor-bright: #caffd0;
+    --phosphor-dim: #7fb989;
+    --amber: #d8d36d;
+  }
+
   body {
-    background: #0d1117;
-    color: #c9d1d9;
-    font-family: 'Courier New', monospace;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        rgba(125, 255, 149, 0.06) 0,
+        rgba(125, 255, 149, 0.06) 1px,
+        transparent 1px,
+        transparent 4px
+      ),
+      var(--screen-bg);
+    color: var(--phosphor-bright);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace;
+    height: 100vh;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -19,8 +37,10 @@
   html, body { height: 100%; overflow: hidden; }
 
   header {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #21262d;
+    padding: 0.85rem 1.25rem;
+    background: var(--screen-panel);
+    border-bottom: 1px solid rgba(125, 255, 149, 0.22);
+    box-shadow: inset 0 -1px 0 rgba(202, 255, 208, 0.07);
     display: flex;
     align-items: center;
     gap: 1.5rem;
@@ -29,8 +49,9 @@
 
   h1 {
     font-size: 1.2rem;
-    color: #f0f6fc;
-    letter-spacing: 0.05em;
+    color: var(--phosphor-bright);
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 0.35rem rgba(125, 255, 149, 0.7);
   }
 
   .controls {
@@ -38,43 +59,49 @@
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
+    min-width: 0;
   }
 
-  label { font-size: 0.85rem; color: #8b949e; display: flex; align-items: center; gap: 0.4rem; }
+  label { font-size: 0.85rem; color: var(--phosphor-dim); display: flex; align-items: center; gap: 0.4rem; }
 
   input[type=number] {
-    background: #161b22;
-    border: 1px solid #30363d;
-    color: #c9d1d9;
+    background: #020703;
+    border: 1px solid rgba(125, 255, 149, 0.28);
+    color: var(--phosphor-bright);
     border-radius: 4px;
     padding: 0.25rem 0.5rem;
     width: 4.5rem;
     font-family: inherit;
     font-size: 0.85rem;
+    box-shadow: inset 0 0 0.6rem rgba(125, 255, 149, 0.08);
   }
 
-  input[type=checkbox] { accent-color: #58a6ff; width: 1em; height: 1em; }
+  input[type=checkbox] { accent-color: var(--phosphor); width: 1em; height: 1em; }
 
   button {
-    background: #238636;
-    color: #fff;
-    border: none;
+    background: #0d3f1b;
+    color: var(--phosphor-bright);
+    border: 1px solid rgba(125, 255, 149, 0.38);
     border-radius: 4px;
     padding: 0.35rem 1rem;
     font-family: inherit;
     font-size: 0.9rem;
     cursor: pointer;
-    transition: background 0.15s;
+    text-shadow: 0 0 0.35rem rgba(125, 255, 149, 0.7);
+    box-shadow: inset 0 0 0.7rem rgba(125, 255, 149, 0.08);
+    transition: background 0.15s, border-color 0.15s;
+    flex: 0 0 auto;
   }
-  button:hover { background: #2ea043; }
+  button:hover { background: #145c28; border-color: rgba(202, 255, 208, 0.7); }
 
   #toast {
     position: fixed;
     bottom: 1.2rem;
     left: 50%;
     transform: translateX(-50%);
-    background: #58a6ff;
-    color: #0d1117;
+    z-index: 20;
+    background: var(--phosphor);
+    color: #031005;
     padding: 0.4rem 1rem;
     border-radius: 4px;
     font-size: 0.85rem;
@@ -85,34 +112,79 @@
   #toast.show { opacity: 1; }
 
   #grid {
+    --pw-column-width: 22ch;
+    --pw-font-size: 1.2rem;
     flex: 1;
-    padding: 1rem 1.5rem;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(22ch, 1fr));
-    gap: 0.5rem 1.5rem;
+    min-height: 0;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.6rem;
     align-content: start;
+    align-items: flex-start;
+    font-size: var(--pw-font-size);
   }
 
   .pw {
-    font-size: clamp(1rem, 2vw, 1.4rem);
+    font-size: inherit;
+    line-height: 1.1;
     font-weight: bold;
-    color: #7ee787;
+    color: var(--phosphor);
     cursor: pointer;
-    padding: 0.15rem 0.3rem;
+    padding: 0.1rem 0.38rem;
     border-radius: 3px;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: clip;
+    flex: 1 1 var(--pw-column-width);
+    max-width: 100%;
+    text-shadow:
+      0 0 0.25rem rgba(125, 255, 149, 0.85),
+      0 0 0.9rem rgba(125, 255, 149, 0.28);
     transition: background 0.1s, color 0.1s;
     user-select: none;
   }
-  .pw:hover { background: #161b22; color: #f0f6fc; }
-  .pw.copied { background: #58a6ff22; color: #58a6ff; }
+  .pw:hover { background: rgba(125, 255, 149, 0.08); color: var(--phosphor-bright); }
+  .pw.copied { background: rgba(125, 255, 149, 0.16); color: #ffffff; }
   .pw-hint {
     font-size: 0.7em;
     font-weight: normal;
-    color: #8b949e;
+    color: var(--amber);
     margin-top: 0.1em;
+    text-shadow: 0 0 0.35rem rgba(216, 211, 109, 0.5);
+  }
+
+  @media (max-width: 700px) {
+    header {
+      padding: 0.55rem 1rem;
+      gap: 1rem;
+      flex-wrap: nowrap;
+    }
+
+    .controls {
+      flex: 1 1 auto;
+      flex-wrap: nowrap;
+      gap: 0.65rem;
+      overflow: hidden;
+    }
+
+    label { font-size: 0.8rem; }
+    input[type=number] { width: 4rem; }
+    button {
+      width: 2rem;
+      height: 1.85rem;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0;
+    }
+
+    button::before {
+      content: "↻";
+      font-size: 1rem;
+      line-height: 1;
+    }
   }
 </style>
 </head>
@@ -240,25 +312,67 @@ function showToast() {
   toastTimer = setTimeout(() => t.classList.remove('show'), 1200);
 }
 
-function countThatFits(length, goroawase) {
-  const grid = document.getElementById('grid');
+function gridContentBox(grid) {
+  const style = getComputedStyle(grid);
+  const width = grid.clientWidth
+    - (parseFloat(style.paddingLeft) || 0)
+    - (parseFloat(style.paddingRight) || 0);
+  const height = grid.clientHeight
+    - (parseFloat(style.paddingTop) || 0)
+    - (parseFloat(style.paddingBottom) || 0);
+  return [Math.max(0, width), Math.max(0, height), style];
+}
+
+function syncGridHeight(grid) {
+  const headerBottom = document.querySelector('header').getBoundingClientRect().bottom;
+  grid.style.height = `${Math.max(0, window.innerHeight - Math.ceil(headerBottom))}px`;
+}
+
+function fitGridMetrics(grid, length, goroawase) {
+  const [contentWidth] = gridContentBox(grid);
+  const maxFont = length > 32 ? 17 : 20;
+  const fitFont = Math.floor((contentWidth - 16) / Math.max(1, length) / 0.62);
+  const fontSize = Math.max(11, Math.min(maxFont, fitFont));
+  grid.style.setProperty('--pw-font-size', `${fontSize}px`);
+
   const probe = document.createElement('div');
   probe.className = 'pw';
   probe.style.visibility = 'hidden';
-  probe.innerHTML = 'x'.repeat(length) + (goroawase ? '<div class="pw-hint">語呂</div>' : '');
-  grid.appendChild(probe);
+  probe.style.position = 'absolute';
+  probe.style.width = 'max-content';
 
+  const text = document.createElement('div');
+  text.textContent = 'w'.repeat(length);
+  probe.appendChild(text);
+  if (goroawase) {
+    const hint = document.createElement('div');
+    hint.className = 'pw-hint';
+    hint.textContent = '語呂';
+    probe.appendChild(hint);
+  }
+
+  grid.appendChild(probe);
   const itemRect = probe.getBoundingClientRect();
-  const gridRect = grid.getBoundingClientRect();
-  const style    = getComputedStyle(grid);
+  probe.remove();
+
+  const width = Math.ceil(itemRect.width + 2);
+  const height = Math.ceil(itemRect.height);
+  grid.style.setProperty('--pw-column-width', `${width}px`);
+  return [width, height];
+}
+
+function countThatFits(length, goroawase) {
+  const grid = document.getElementById('grid');
+  syncGridHeight(grid);
+  const [itemWidth, itemHeight] = fitGridMetrics(grid, length, goroawase);
+  const [contentWidth, contentHeight, style] = gridContentBox(grid);
   const colGap   = parseFloat(style.columnGap) || 0;
   const rowGap   = parseFloat(style.rowGap)    || 0;
-  const cols     = style.gridTemplateColumns.split(' ').length;
-  const rows     = Math.floor((gridRect.height + rowGap) / (itemRect.height + rowGap));
+  const cols     = Math.max(1, Math.floor((contentWidth + colGap) / (itemWidth + colGap)));
+  const rows     = Math.max(1, Math.floor((contentHeight + rowGap) / (itemHeight + rowGap)));
 
-  probe.remove();
   const raw = Math.max(2, cols * rows);
-  return raw % 2 === 0 ? raw : raw + 1;
+  return raw % 2 === 0 ? raw : Math.max(2, raw - 1);
 }
 
 function makeItem(pw, hint) {
@@ -316,6 +430,10 @@ window.addEventListener('resize', () => {
 });
 
 document.getElementById('gen').addEventListener('click', render);
+document.querySelectorAll('#len, #digit, #symbol, #goroawase').forEach((control) => {
+  control.addEventListener('input', render);
+  control.addEventListener('change', render);
+});
 loadGoroawase()
   .then(render)
   .catch((err) => {

@@ -3,6 +3,7 @@
 import random
 import argparse
 import json
+import shutil
 from pathlib import Path
 
 # QWERTY layout — 変えたければここを編集
@@ -43,6 +44,7 @@ GOROAWASE = _load_goroawase(GOROAWASE_PATH)
 GOROAWASE_4 = [(label, digits) for label, digits in GOROAWASE if len(digits) == 4]
 
 DEFAULT_LENGTH = 16
+MIN_LENGTH = 8
 BANNED_UPPERCASE = {'O', 'I'}
 
 
@@ -77,6 +79,18 @@ def _fixed_positions(length):
 def _fixed_goro_start_positions(length):
     positions = [i for i in range(0, length - 3, 4)]
     return positions or [0]
+
+
+def _even_count(count):
+    count = max(2, count)
+    if count % 2 != 0:
+        count += 1
+    return count
+
+
+def _default_count():
+    terminal = shutil.get_terminal_size(fallback=(80, 24))
+    return _even_count(terminal.lines // 2)
 
 
 def _unit(from_hand):
@@ -150,18 +164,16 @@ def main():
         description='Pronounceable, keyboard-alternating password generator',
     )
     p.add_argument('length', nargs='?', type=int, default=DEFAULT_LENGTH,
-                   help=f'Password length (min 12, default {DEFAULT_LENGTH})')
-    p.add_argument('count',  nargs='?', type=int, default=1,
-                   help='Number of passwords to generate')
+                   help=f'Password length (min {MIN_LENGTH}, default {DEFAULT_LENGTH})')
+    p.add_argument('count',  nargs='?', type=int,
+                   help='Number of passwords to generate (default: about half the terminal height)')
     p.add_argument('-d', '--digit',     action='store_true', help='Include one digit')
     p.add_argument('-s', '--symbol',    action='store_true', help='Include one symbol')
     p.add_argument('-g', '--goroawase', action='store_true', help='Embed goroawase digits with hint')
     args = p.parse_args()
 
-    length = max(12, args.length)
-    count = max(2, args.count)
-    if count % 2 != 0:
-        count += 1
+    length = max(MIN_LENGTH, args.length)
+    count = _default_count() if args.count is None else _even_count(args.count)
 
     for _ in range(count):
         pw, hint = generate(length, args.digit, args.symbol, args.goroawase)
