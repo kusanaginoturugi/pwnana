@@ -230,6 +230,30 @@ let GOROAWASE = [];
 
 const pick = a => a[Math.random() * a.length | 0];
 const randomScrambleText = length => Array.from({ length }, () => pick(SCRAMBLE_CHARS)).join('');
+const randomBetween = (min, max) => min + Math.random() * (max - min);
+
+function shuffledIndexes(length) {
+  const indexes = Array.from({ length }, (_, i) => i);
+  for (let i = indexes.length - 1; i > 0; i--) {
+    const j = Math.random() * (i + 1) | 0;
+    [indexes[i], indexes[j]] = [indexes[j], indexes[i]];
+  }
+  return indexes;
+}
+
+function scramblePlan(length) {
+  const order = shuffledIndexes(length);
+  const rank = Array(length);
+  order.forEach((position, i) => {
+    rank[position] = i;
+  });
+
+  return {
+    rank,
+    delay: Math.random() < 0.18 ? randomBetween(0, 80) : randomBetween(80, 760),
+    duration: Math.random() < 0.22 ? randomBetween(180, 360) : randomBetween(520, 1250),
+  };
+}
 
 function unit(hand) {
   const { lc, lv, rc, rv } = LAYOUT;
@@ -387,17 +411,18 @@ function countThatFits(length, goroawase) {
   return Math.max(1, cols * rows);
 }
 
-function scramblePasswordText(text, pw, index) {
+function scramblePasswordText(text, pw) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     text.textContent = pw;
     return;
   }
 
   const item = text.closest('.pw');
+  const plan = scramblePlan(pw.length);
   const state = { reveal: 0 };
   const update = () => {
     const reveal = Math.floor(state.reveal);
-    text.textContent = [...pw].map((ch, i) => i < reveal ? ch : pick(SCRAMBLE_CHARS)).join('');
+    text.textContent = [...pw].map((ch, i) => plan.rank[i] < reveal ? ch : pick(SCRAMBLE_CHARS)).join('');
   };
 
   item.classList.add('scrambling');
@@ -408,8 +433,8 @@ function scramblePasswordText(text, pw, index) {
       targets: state,
       reveal: pw.length,
       round: 1,
-      duration: Math.min(1100, 520 + pw.length * 22),
-      delay: Math.min(index * 26, 420),
+      duration: plan.duration,
+      delay: plan.delay,
       easing: 'easeOutQuad',
       update,
       complete: () => {
@@ -420,15 +445,13 @@ function scramblePasswordText(text, pw, index) {
     return;
   }
 
-  const delay = Math.min(index * 26, 420);
-  const duration = Math.min(1100, 520 + pw.length * 22);
-  const startAt = performance.now() + delay;
+  const startAt = performance.now() + plan.delay;
   function frame(now) {
     if (now < startAt) {
       requestAnimationFrame(frame);
       return;
     }
-    state.reveal = Math.min(pw.length, ((now - startAt) / duration) * pw.length);
+    state.reveal = Math.min(pw.length, ((now - startAt) / plan.duration) * pw.length);
     update();
     if (state.reveal < pw.length) {
       requestAnimationFrame(frame);
@@ -440,7 +463,7 @@ function scramblePasswordText(text, pw, index) {
   requestAnimationFrame(frame);
 }
 
-function makeItem(pw, hint, index) {
+function makeItem(pw, hint) {
   const el = document.createElement('div');
   el.className = 'pw';
   el.title = 'click to copy';
@@ -461,7 +484,7 @@ function makeItem(pw, hint, index) {
       showToast();
     });
   });
-  requestAnimationFrame(() => scramblePasswordText(text, pw, index));
+  requestAnimationFrame(() => scramblePasswordText(text, pw));
   return el;
 }
 
@@ -478,7 +501,7 @@ function render() {
   const frag  = document.createDocumentFragment();
   for (let i = 0; i < count; i++) {
     const [pw, hint] = generate(length, digit, symbol, goroawase);
-    frag.appendChild(makeItem(pw, hint, i));
+    frag.appendChild(makeItem(pw, hint));
   }
   grid.appendChild(frag);
 }
