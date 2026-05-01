@@ -384,8 +384,7 @@ function countThatFits(length, goroawase) {
   const cols     = Math.max(1, Math.floor((contentWidth + colGap) / (itemWidth + colGap)));
   const rows     = Math.max(1, Math.floor((contentHeight + rowGap) / (itemHeight + rowGap)));
 
-  const raw = Math.max(2, cols * rows);
-  return raw % 2 === 0 ? raw : Math.max(2, raw - 1);
+  return Math.max(1, cols * rows);
 }
 
 function scramblePasswordText(text, pw, index) {
