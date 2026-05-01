@@ -144,6 +144,16 @@
     transition: background 0.1s, color 0.1s;
     user-select: none;
   }
+  .pw-text {
+    display: block;
+    min-height: 1.1em;
+  }
+  .pw.scrambling .pw-text {
+    color: var(--phosphor-bright);
+    text-shadow:
+      0 0 0.28rem rgba(202, 255, 208, 0.95),
+      0 0 1.1rem rgba(125, 255, 149, 0.42);
+  }
   .pw:hover { background: rgba(125, 255, 149, 0.08); color: var(--phosphor-bright); }
   .pw.copied { background: rgba(125, 255, 149, 0.16); color: #ffffff; }
   .pw-hint {
@@ -204,6 +214,7 @@
 <div id="grid"></div>
 <div id="toast">Copied!</div>
 
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
 <script>
 const LAYOUT = {
   lc: [...'wrtsfgzxcvbq'],
@@ -214,9 +225,11 @@ const LAYOUT = {
 const DIGRAPHS = ['oo','ee','ii','ou','ai','au'];
 const LEET = { i:'!', a:'@', s:'$', e:'3', o:'0', t:'7', q:'9', b:'6', g:'8' };
 const BANNED_UPPERCASE = new Set(['O', 'I']);
+const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&!?@';
 let GOROAWASE = [];
 
 const pick = a => a[Math.random() * a.length | 0];
+const randomScrambleText = length => Array.from({ length }, () => pick(SCRAMBLE_CHARS)).join('');
 
 function unit(hand) {
   const { lc, lv, rc, rv } = LAYOUT;
@@ -375,12 +388,66 @@ function countThatFits(length, goroawase) {
   return raw % 2 === 0 ? raw : Math.max(2, raw - 1);
 }
 
-function makeItem(pw, hint) {
+function scramblePasswordText(text, pw, index) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    text.textContent = pw;
+    return;
+  }
+
+  const item = text.closest('.pw');
+  const state = { reveal: 0 };
+  const update = () => {
+    const reveal = Math.floor(state.reveal);
+    text.textContent = [...pw].map((ch, i) => i < reveal ? ch : pick(SCRAMBLE_CHARS)).join('');
+  };
+
+  item.classList.add('scrambling');
+  text.textContent = randomScrambleText(pw.length);
+
+  if (typeof anime === 'function') {
+    anime({
+      targets: state,
+      reveal: pw.length,
+      round: 1,
+      duration: Math.min(1100, 520 + pw.length * 22),
+      delay: Math.min(index * 26, 420),
+      easing: 'easeOutQuad',
+      update,
+      complete: () => {
+        text.textContent = pw;
+        item.classList.remove('scrambling');
+      },
+    });
+    return;
+  }
+
+  const delay = Math.min(index * 26, 420);
+  const duration = Math.min(1100, 520 + pw.length * 22);
+  const startAt = performance.now() + delay;
+  function frame(now) {
+    if (now < startAt) {
+      requestAnimationFrame(frame);
+      return;
+    }
+    state.reveal = Math.min(pw.length, ((now - startAt) / duration) * pw.length);
+    update();
+    if (state.reveal < pw.length) {
+      requestAnimationFrame(frame);
+    } else {
+      text.textContent = pw;
+      item.classList.remove('scrambling');
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function makeItem(pw, hint, index) {
   const el = document.createElement('div');
   el.className = 'pw';
   el.title = 'click to copy';
   const text = document.createElement('div');
-  text.textContent = pw;
+  text.className = 'pw-text';
+  text.textContent = randomScrambleText(pw.length);
   el.appendChild(text);
   if (hint) {
     const h = document.createElement('div');
@@ -395,6 +462,7 @@ function makeItem(pw, hint) {
       showToast();
     });
   });
+  requestAnimationFrame(() => scramblePasswordText(text, pw, index));
   return el;
 }
 
@@ -411,7 +479,7 @@ function render() {
   const frag  = document.createDocumentFragment();
   for (let i = 0; i < count; i++) {
     const [pw, hint] = generate(length, digit, symbol, goroawase);
-    frag.appendChild(makeItem(pw, hint));
+    frag.appendChild(makeItem(pw, hint, i));
   }
   grid.appendChild(frag);
 }
