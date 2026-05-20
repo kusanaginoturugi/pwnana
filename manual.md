@@ -3,7 +3,7 @@
 ## Synopsis
 
 ```
-pwnana [length] [count] [-d|--digit] [-s|--symbol] [-g|--goroawase] [-h|--help]
+pwnana [length] [count] [-d|--digit] [-s|--symbol] [-u|--uppercase] [-g|--goroawase] [-h|--help]
 ```
 
 ## Arguments
@@ -14,6 +14,7 @@ pwnana [length] [count] [-d|--digit] [-s|--symbol] [-g|--goroawase] [-h|--help]
 | `count` | 端末高さの約半分 | 生成する個数。省略時は端末の行数から自動計算（出力時に偶数へ丸め） |
 | `-d`, `--digit` | off | 数字を1つ含める |
 | `-s`, `--symbol` | off | 記号を1つ含める |
+| `-u`, `--uppercase` | off | 大文字を1つ含める |
 | `-g`, `--goroawase` | off | 4桁の語呂合わせを埋め込み、ヒントを表示する |
 
 ## Generation algorithm
@@ -26,6 +27,7 @@ pwnana [length] [count] [-d|--digit] [-s|--symbol] [-g|--goroawase] [-h|--help]
 3. 指定長になるまで連結し、超過分を切り捨て
 4. 可読性ルールとして、大文字 `O` / `I` はデフォルトで使用しない
 5. 語尾が子音で終わる場合、`n` 以外は母音に置換して発音しやすくする
+6. `-u` 指定時は、英字1文字を大文字化する (`O` / `I` は避ける)
 
 ## Digit / symbol insertion
 

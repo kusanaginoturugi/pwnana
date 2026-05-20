@@ -112,7 +112,18 @@ def _unit(from_hand):
             return random.choice(lc) + random.choice(rv), 'right'
 
 
-def generate(length, digit=False, symbol=False, goroawase=False):
+def _uppercase(result):
+    """大文字を1文字含める。可読性のため O/I は避ける。"""
+    candidates = [i for i, c in enumerate(result)
+                  if c.isalpha() and c.upper() not in BANNED_UPPERCASE]
+    if not candidates:
+        return False
+    idx = random.choice(candidates)
+    result[idx] = result[idx].upper()
+    return True
+
+
+def generate(length, digit=False, symbol=False, goroawase=False, uppercase=False):
     """(password, hint) を返す。hint は語呂合わせ時のみ文字列、それ以外は None。"""
     chunks = []
     hand = random.choice(['left', 'right'])
@@ -155,6 +166,8 @@ def generate(length, digit=False, symbol=False, goroawase=False):
         result[-1] = random.choice(vowels)
 
     _apply_default_rules(result)
+    if uppercase:
+        _uppercase(result)
     return ''.join(result), hint
 
 
@@ -169,6 +182,7 @@ def main():
                    help='Number of passwords to generate (default: about half the terminal height)')
     p.add_argument('-d', '--digit',     action='store_true', help='Include one digit')
     p.add_argument('-s', '--symbol',    action='store_true', help='Include one symbol')
+    p.add_argument('-u', '--uppercase', action='store_true', help='Include one uppercase letter')
     p.add_argument('-g', '--goroawase', action='store_true', help='Embed goroawase digits with hint')
     args = p.parse_args()
 
@@ -176,7 +190,7 @@ def main():
     count = _default_count() if args.count is None else _even_count(args.count)
 
     for _ in range(count):
-        pw, hint = generate(length, args.digit, args.symbol, args.goroawase)
+        pw, hint = generate(length, args.digit, args.symbol, args.goroawase, args.uppercase)
         if hint:
             print(f"{pw}  [{hint}]")
         else:

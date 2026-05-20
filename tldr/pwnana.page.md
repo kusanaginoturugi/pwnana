@@ -1,7 +1,7 @@
 # pwnana
 
 > Pronounceable, keyboard-alternating password generator.
-> Generates passwords that alternate QWERTY hands and can include leet digits, symbols, or Japanese goroawase hints.
+> Generates passwords that alternate QWERTY hands and can include leet digits, symbols, uppercase letters, or Japanese goroawase hints.
 > More information: <https://github.com/kusanaginoturugi/pwnana>.
 
 - Generate passwords with the default length, filling about half of the terminal height:
@@ -24,9 +24,17 @@
 
 `pwnana -s`
 
+- Generate passwords that include one uppercase letter:
+
+`pwnana -u`
+
 - Generate passwords that include both a digit and a symbol:
 
 `pwnana {{24}} -d -s`
+
+- Generate passwords that include a digit, symbol, and uppercase letter:
+
+`pwnana {{24}} -d -s -u`
 
 - Generate passwords with embedded goroawase digits and hints:
 

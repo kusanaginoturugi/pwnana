@@ -1,7 +1,7 @@
 # pwnana quickguide
 
 ```
-pwnana [length] [count] [-d] [-s] [-g]
+pwnana [length] [count] [-d] [-s] [-u] [-g]
 ```
 
 | 例 | 説明 |
@@ -11,7 +11,9 @@ pwnana [length] [count] [-d] [-s] [-g]
 | `pwnana 20 5` | 20文字 × 6個 |
 | `pwnana -d` | 16文字、数字1つ含む |
 | `pwnana -s` | 16文字、記号1つ含む |
+| `pwnana -u` | 16文字、大文字1つ含む |
 | `pwnana 24 -d -s` | 24文字、数字+記号 |
+| `pwnana 24 -d -s -u` | 24文字、数字+記号+大文字 |
 | `pwnana -g` | 16文字、4桁語呂合わせ入り |
 
 - `length` の最小値は 8 (それ以下を指定しても 8 になる)
@@ -19,4 +21,5 @@ pwnana [length] [count] [-d] [-s] [-g]
 - `count` は偶数に丸められる（奇数指定時は +1）
 - 数字・記号は leet 置換で挿入される (例: `a→@`, `e→3`, `o→0`)
 - leet 置換できない場合、数字・記号は 4文字ごとの固定位置に挿入される
+- `-u` は英字1文字を大文字化する
 - デフォルト可読性ルールとして大文字 `O` / `I` は生成しない

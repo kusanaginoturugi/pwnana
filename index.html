@@ -206,6 +206,7 @@
     <label>length <input type="number" id="len" value="16" min="8" max="64"></label>
     <label><input type="checkbox" id="digit">     digit</label>
     <label><input type="checkbox" id="symbol">    symbol</label>
+    <label><input type="checkbox" id="uppercase"> upper</label>
     <label><input type="checkbox" id="goroawase"> 語呂</label>
     <button id="gen">Generate</button>
   </div>
@@ -278,6 +279,16 @@ function applyDefaultRules(arr) {
   }
 }
 
+function applyUppercase(arr) {
+  const cands = arr.reduce((a, c, i) => (
+    /[a-z]/i.test(c) && !BANNED_UPPERCASE.has(c.toUpperCase()) ? [...a, i] : a
+  ), []);
+  if (!cands.length) return false;
+  const i = pick(cands);
+  arr[i] = arr[i].toUpperCase();
+  return true;
+}
+
 function isConsonant(ch) {
   return /[a-z]/i.test(ch) && !/[aeiou]/i.test(ch);
 }
@@ -296,7 +307,7 @@ function fixedGoroStartPositions(length) {
   return arr.length ? arr : [0];
 }
 
-function generate(length, digit, symbol, goroawase) {
+function generate(length, digit, symbol, goroawase, uppercase) {
   const chunks = [];
   let hand = Math.random() < 0.5 ? 'left' : 'right';
   while (chunks.reduce((s, c) => s + c.length, 0) < length) {
@@ -338,6 +349,7 @@ function generate(length, digit, symbol, goroawase) {
     res[res.length - 1] = pick([...LAYOUT.lv, ...LAYOUT.rv]);
   }
   applyDefaultRules(res);
+  if (uppercase) applyUppercase(res);
   return [res.join(''), hint];
 }
 
@@ -492,6 +504,7 @@ function render() {
   const length    = Math.max(8, parseInt(document.getElementById('len').value) || 16);
   const digit     = document.getElementById('digit').checked;
   const symbol    = document.getElementById('symbol').checked;
+  const uppercase = document.getElementById('uppercase').checked;
   const goroawase = document.getElementById('goroawase').checked;
 
   const grid = document.getElementById('grid');
@@ -500,7 +513,7 @@ function render() {
   const count = countThatFits(length, goroawase);
   const frag  = document.createDocumentFragment();
   for (let i = 0; i < count; i++) {
-    const [pw, hint] = generate(length, digit, symbol, goroawase);
+    const [pw, hint] = generate(length, digit, symbol, goroawase, uppercase);
     frag.appendChild(makeItem(pw, hint));
   }
   grid.appendChild(frag);
@@ -520,7 +533,7 @@ window.addEventListener('resize', () => {
 });
 
 document.getElementById('gen').addEventListener('click', render);
-document.querySelectorAll('#len, #digit, #symbol, #goroawase').forEach((control) => {
+document.querySelectorAll('#len, #digit, #symbol, #uppercase, #goroawase').forEach((control) => {
   control.addEventListener('input', render);
   control.addEventListener('change', render);
 });
