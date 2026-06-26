@@ -207,6 +207,7 @@
     <label><input type="checkbox" id="digit">     digit</label>
     <label><input type="checkbox" id="symbol">    symbol</label>
     <label><input type="checkbox" id="uppercase"> upper</label>
+    <label><input type="checkbox" id="wordSymbols"> word symbols</label>
     <label><input type="checkbox" id="goroawase"> 語呂</label>
     <button id="gen">Generate</button>
   </div>
@@ -225,6 +226,7 @@ const LAYOUT = {
 };
 const DIGRAPHS = ['oo','ee','ii','ou','ai','au'];
 const LEET = { i:'!', a:'@', s:'$', e:'3', o:'0', t:'7', q:'9', b:'6', g:'8' };
+const WORD_SYMBOLS = [...'-+%~&/_'];
 const BANNED_UPPERCASE = new Set(['O', 'I']);
 const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&!?@';
 let GOROAWASE = [];
@@ -307,7 +309,7 @@ function fixedGoroStartPositions(length) {
   return arr.length ? arr : [0];
 }
 
-function generate(length, digit, symbol, goroawase, uppercase) {
+function generate(length, digit, symbol, goroawase, uppercase, wordSymbols) {
   const chunks = [];
   let hand = Math.random() < 0.5 ? 'left' : 'right';
   while (chunks.reduce((s, c) => s + c.length, 0) < length) {
@@ -339,11 +341,16 @@ function generate(length, digit, symbol, goroawase, uppercase) {
     usedPositions.add(pos);
   }
 
-  if (symbol && !applyLeet(res, false)) {
+  if (symbol && !wordSymbols && !applyLeet(res, false)) {
     const syms = Object.values(LEET).filter(v => !/\d/.test(v));
     const cands = insertionPositions.filter(i => !usedPositions.has(i));
     const pos = pick(cands.length ? cands : insertionPositions);
     res[pos] = pick(syms);
+  } else if (symbol && wordSymbols) {
+    const cands = insertionPositions.filter(i => !usedPositions.has(i));
+    const pos = pick(cands.length ? cands : insertionPositions);
+    res[pos] = pick(WORD_SYMBOLS);
+    usedPositions.add(pos);
   }
   if (isConsonant(res[res.length - 1]) && res[res.length - 1].toLowerCase() !== 'n') {
     res[res.length - 1] = pick([...LAYOUT.lv, ...LAYOUT.rv]);
@@ -503,8 +510,9 @@ function makeItem(pw, hint) {
 function render() {
   const length    = Math.max(8, parseInt(document.getElementById('len').value) || 16);
   const digit     = document.getElementById('digit').checked;
-  const symbol    = document.getElementById('symbol').checked;
   const uppercase = document.getElementById('uppercase').checked;
+  const wordSymbols = document.getElementById('wordSymbols').checked;
+  const symbol    = document.getElementById('symbol').checked || wordSymbols;
   const goroawase = document.getElementById('goroawase').checked;
 
   const grid = document.getElementById('grid');
@@ -513,7 +521,7 @@ function render() {
   const count = countThatFits(length, goroawase);
   const frag  = document.createDocumentFragment();
   for (let i = 0; i < count; i++) {
-    const [pw, hint] = generate(length, digit, symbol, goroawase, uppercase);
+    const [pw, hint] = generate(length, digit, symbol, goroawase, uppercase, wordSymbols);
     frag.appendChild(makeItem(pw, hint));
   }
   grid.appendChild(frag);
@@ -533,7 +541,7 @@ window.addEventListener('resize', () => {
 });
 
 document.getElementById('gen').addEventListener('click', render);
-document.querySelectorAll('#len, #digit, #symbol, #uppercase, #goroawase').forEach((control) => {
+document.querySelectorAll('#len, #digit, #symbol, #uppercase, #wordSymbols, #goroawase').forEach((control) => {
   control.addEventListener('input', render);
   control.addEventListener('change', render);
 });

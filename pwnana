@@ -33,6 +33,9 @@ LEET = {
 
 GOROAWASE_PATH = Path(__file__).resolve().with_name('goroawase.json')
 
+# ターミナルのダブルクリック選択で分断されにくい記号
+WORD_SYMBOLS = list('-+%~&/_')
+
 
 def _load_goroawase(path):
     with path.open(encoding='utf-8') as f:
@@ -123,7 +126,7 @@ def _uppercase(result):
     return True
 
 
-def generate(length, digit=False, symbol=False, goroawase=False, uppercase=False):
+def generate(length, digit=False, symbol=False, goroawase=False, uppercase=False, word_symbols=False):
     """(password, hint) を返す。hint は語呂合わせ時のみ文字列、それ以外は None。"""
     chunks = []
     hand = random.choice(['left', 'right'])
@@ -155,11 +158,17 @@ def generate(length, digit=False, symbol=False, goroawase=False, uppercase=False
         result[pos] = str(random.randint(0, 9))
         used_positions.add(pos)
 
-    if symbol and not _leet(result, want_digit=False):
+    if symbol and not word_symbols and not _leet(result, want_digit=False):
         symbols = [v for v in LEET.values() if not v.isdigit()]
         candidates = [p for p in fixed_positions if p not in used_positions]
         pos = random.choice(candidates or fixed_positions)
         result[pos] = random.choice(symbols)
+    elif symbol and word_symbols:
+        symbols = WORD_SYMBOLS
+        candidates = [p for p in fixed_positions if p not in used_positions]
+        pos = random.choice(candidates or fixed_positions)
+        result[pos] = random.choice(symbols)
+        used_positions.add(pos)
 
     if _is_consonant(result[-1]) and result[-1].lower() != 'n':
         vowels = LAYOUT['left_vowels'] + LAYOUT['right_vowels']
@@ -183,14 +192,18 @@ def main():
     p.add_argument('-d', '--digit',     action='store_true', help='Include one digit')
     p.add_argument('-s', '--symbol',    action='store_true', help='Include one symbol')
     p.add_argument('-u', '--uppercase', action='store_true', help='Include one uppercase letter')
+    p.add_argument('--word-symbols',    action='store_true',
+                   help='Use terminal word-selectable symbols (-+%%~&/_)')
     p.add_argument('-g', '--goroawase', action='store_true', help='Embed goroawase digits with hint')
     args = p.parse_args()
 
     length = max(MIN_LENGTH, args.length)
     count = _default_count() if args.count is None else _even_count(args.count)
+    symbol = args.symbol or args.word_symbols
 
     for _ in range(count):
-        pw, hint = generate(length, args.digit, args.symbol, args.goroawase, args.uppercase)
+        pw, hint = generate(length, args.digit, symbol, args.goroawase,
+                            args.uppercase, args.word_symbols)
         if hint:
             print(f"{pw}  [{hint}]")
         else:

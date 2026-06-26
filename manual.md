@@ -3,7 +3,7 @@
 ## Synopsis
 
 ```
-pwnana [length] [count] [-d|--digit] [-s|--symbol] [-u|--uppercase] [-g|--goroawase] [-h|--help]
+pwnana [length] [count] [-d|--digit] [-s|--symbol] [--word-symbols] [-u|--uppercase] [-g|--goroawase] [-h|--help]
 ```
 
 ## Arguments
@@ -14,6 +14,7 @@ pwnana [length] [count] [-d|--digit] [-s|--symbol] [-u|--uppercase] [-g|--goroaw
 | `count` | 端末高さの約半分 | 生成する個数。省略時は端末の行数から自動計算（出力時に偶数へ丸め） |
 | `-d`, `--digit` | off | 数字を1つ含める |
 | `-s`, `--symbol` | off | 記号を1つ含める |
+| `--word-symbols` | off | 記号を `-+%~&/_` に絞る。単独指定でも記号を1つ含める |
 | `-u`, `--uppercase` | off | 大文字を1つ含める |
 | `-g`, `--goroawase` | off | 4桁の語呂合わせを埋め込み、ヒントを表示する |
 
@@ -35,6 +36,10 @@ pwnana [length] [count] [-d|--digit] [-s|--symbol] [-u|--uppercase] [-g|--goroaw
 なければ 4文字ごとの固定位置に挿入する。
 
 `-g` 指定時の語呂合わせは **4桁のみ** 使用し、4文字単位の開始位置に埋め込む。
+
+`--word-symbols` は `-s` の記号を `-+%~&/_` に切り替える。ターミナル上で
+マウスのダブルクリック選択を壊しにくい記号だけを使いたいとき向け。
+`--word-symbols` だけ指定した場合も、記号入りとして扱う。
 
 デフォルトの leet マップ:
 
