@@ -1,0 +1,36 @@
+# Maintainer: Takuro Onoue <kusanaginoturugi@gmail.com>
+pkgname=pwnana-git
+pkgver=r0
+pkgrel=1
+pkgdesc='Pronounceable, keyboard-alternating password generator'
+arch=('x86_64' 'aarch64')
+url='https://github.com/kusanaginoturugi/pwnana'
+license=('LicenseRef-unknown')
+depends=('glibc')
+makedepends=('git' 'go')
+provides=('pwnana')
+conflicts=('pwnana')
+source=("pwnana::git+${url}.git")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd pwnana
+  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+build() {
+  cd pwnana
+  export CGO_CPPFLAGS="${CPPFLAGS}"
+  export CGO_CFLAGS="${CFLAGS}"
+  export CGO_CXXFLAGS="${CXXFLAGS}"
+  export CGO_LDFLAGS="${LDFLAGS}"
+  export GOFLAGS='-buildmode=pie -trimpath -mod=readonly -modcacherw'
+  go build -ldflags "-linkmode=external -extldflags \"${LDFLAGS}\"" -o pwnana .
+}
+
+package() {
+  cd pwnana
+  install -Dm755 pwnana "$pkgdir/usr/bin/pwnana"
+  install -Dm644 -t "$pkgdir/usr/share/doc/pwnana" README.md README.ja.md docs/*.md
+  install -Dm644 -t "$pkgdir/usr/share/doc/pwnana/tldr" tldr/*.md
+}

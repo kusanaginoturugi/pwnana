@@ -1,5 +1,7 @@
 # pwnana quickguide
 
+[English](quickguide.md)
+
 ```
 pwnana [length] [count] [-d] [-s] [--word-symbols] [-u] [-g]
 ```

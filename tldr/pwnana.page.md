@@ -24,6 +24,10 @@
 
 `pwnana -s`
 
+- Generate passwords with terminal word-selectable symbols:
+
+`pwnana --word-symbols`
+
 - Generate passwords that include one uppercase letter:
 
 `pwnana -u`

@@ -1,5 +1,7 @@
 # pwnana manual
 
+[English](manual.md)
+
 ## Synopsis
 
 ```
@@ -57,33 +59,38 @@ pwnana [length] [count] [-d|--digit] [-s|--symbol] [--word-symbols] [-u|--upperc
 
 ## Customization
 
-スクリプト冒頭の定数を編集する。
+`main.go` 冒頭の変数を編集する。
 
-### LAYOUT
+### layout
 
-```python
-LAYOUT = {
-    'left_consonants':  list('wrtsfgzxcvbq'),
-    'left_vowels':      list('ea'),
-    'right_consonants': list('yphjklnm'),
-    'right_vowels':     list('uio'),
+```go
+layout = struct {
+    leftConsonants  string
+    leftVowels      string
+    rightConsonants string
+    rightVowels     string
+}{
+    leftConsonants:  "wrtsfgzxcvbq",
+    leftVowels:      "ea",
+    rightConsonants: "yphjklnm",
+    rightVowels:     "uio",
 }
 ```
 
 別配列 (Dvorak, Colemak など) を使う場合はここを書き換える。
 
-### DIGRAPHS
+### digraphs
 
-```python
-DIGRAPHS = ['oo', 'ee', 'ii', 'ou', 'ai', 'au']
+```go
+digraphs = []string{"oo", "ee", "ii", "ou", "ai", "au"}
 ```
 
 発音上自然なダイグラフのリスト。20% の確率でランダムに選ばれる。
 
-### LEET
+### leet
 
-```python
-LEET = {
+```go
+leet = map[byte]byte{
     'i': '!',
     'a': '@',
     ...
