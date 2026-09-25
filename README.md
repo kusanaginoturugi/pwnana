@@ -50,3 +50,7 @@ See [docs/manual.md](docs/manual.md) for details.
 - It's perfect for those mysterious corporate "change your password every three months" rules, but use it at your own risk.
 
 The author accepts no responsibility for any damage arising from the use of this tool (including account compromise, data leaks, or any other harm). Use it at your own judgment and risk.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
